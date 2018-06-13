@@ -23,13 +23,7 @@ noBins = 30
 maxFreq = 8000
 gamma = 1.19
 
-# scaleF = float(maxFreq - 1) / pow(noBins + 1, gamma)
 scaleF = float(maxFreq) / pow(gamma, noBins - 1)
-
-# bins = [int(scaleF * pow(x, gamma)) for x in xrange(noBins + 1)]
-# bins = [int(200 + ((500.0 / (noBins + 1)) * x)) for x in xrange(noBins + 1)]
-print scaleF
-# bins = [int(scaleF * pow(gamma, x)) for x in xrange(noBins + 1)]
 bins = [0]
 for x in xrange(noBins):
     bins.append(int(scaleF * pow(gamma, x)))
@@ -39,12 +33,7 @@ print bins
 # weighting
 
 maxWeight = 32
-
-# scaleF = float(maxWeight) / pow(noBins, gamma)
 scaleF = float(maxWeight - 1) / pow(gamma, noBins - 1)
-
-# weighting = (np.array([int(scaleF * pow(x, gamma)) + 1 for x in xrange(noBins)]))
-# weighting = [3] * noBins
 weighting = (np.array([scaleF * pow(gamma, x) + 1 for x in xrange(noBins)]))
 print weighting
 
@@ -91,7 +80,6 @@ def drawMatrix(matrix):
             buf_x = x + ((x / 5) * 3)
             mdp.set_pixel(buf_x, MDP_HEIGHT - y, 1)
     mdp.show()
-#     print matrix
 
 
 mdp.set_brightness(1.0)
