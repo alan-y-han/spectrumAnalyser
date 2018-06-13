@@ -40,7 +40,6 @@ print weighting
 
 #other stuff
 matrix = [0] * noBins
-power = []
 
 
 def power_index(val):
