@@ -17,25 +17,46 @@ output.setrate(sample_rate)
 output.setformat(aa.PCM_FORMAT_S16_LE)
 output.setperiodsize(chunk)
 
-# generate fft bins
+
+# bins
 noBins = 30
+maxFreq = 8000
+gamma = 1.19
 
-step = 8000 / noBins
-bins = [x * step for x in xrange(noBins + 1)]
+# scaleF = float(maxFreq - 1) / pow(noBins + 1, gamma)
+scaleF = float(maxFreq) / pow(gamma, noBins - 1)
+
+# bins = [int(scaleF * pow(x, gamma)) for x in xrange(noBins + 1)]
+# bins = [int(200 + ((500.0 / (noBins + 1)) * x)) for x in xrange(noBins + 1)]
+print scaleF
+# bins = [int(scaleF * pow(gamma, x)) for x in xrange(noBins + 1)]
+bins = [0]
+for x in xrange(noBins):
+    bins.append(int(scaleF * pow(gamma, x)))
+print bins
 
 
-matrix    = [0] * noBins
-power     = []
-weighting = [1, 1, 1, 2, 2,
-             2, 4, 4, 4, 4,
-             8, 8, 8, 8, 8,
-             8, 8, 8, 8, 8,
-             8, 8, 16, 16, 16,
-             16, 16, 16, 16, 16]
+# weighting
+
+maxWeight = 32
+
+# scaleF = float(maxWeight) / pow(noBins, gamma)
+scaleF = float(maxWeight - 1) / pow(gamma, noBins - 1)
+
+# weighting = (np.array([int(scaleF * pow(x, gamma)) + 1 for x in xrange(noBins)]))
+# weighting = [3] * noBins
+weighting = (np.array([scaleF * pow(gamma, x) + 1 for x in xrange(noBins)]))
+print weighting
+
+
+#other stuff
+matrix = [0] * noBins
+power = []
 
 
 def power_index(val):
     return int(2 * chunk * val / sample_rate)
+
 
 def compute_fft(data, chunk, sample_rate):
     global matrix
@@ -48,10 +69,15 @@ def compute_fft(data, chunk, sample_rate):
     power = np.abs(fourier)
 
     for i in xrange(noBins):
-        matrix[i] = int(np.mean(power[power_index(bins[i]) : power_index(bins[i + 1])]))
+        minI = power_index(bins[i])
+        maxI = power_index(bins[i + 1])
+        if minI != maxI:
+            matrix[i] = int(np.mean(power[power_index(bins[i]) : power_index(bins[i + 1])]))
+        else:
+            matrix[i] = 0
 
-    matrix = np.divide(np.multiply(matrix, weighting), 500000)
-    matrix = matrix.clip(0, 6)
+    matrix = np.divide(np.multiply(matrix, weighting), 1500000)
+    matrix = matrix.clip(0, 7)
 
     return matrix
 
@@ -61,11 +87,11 @@ MDP_HEIGHT = 6
 def drawMatrix(matrix):
     mdp.clear()
     for x in range(len(matrix)):
-        for y in range(matrix[x]):
+        for y in range(int(matrix[x])):
             buf_x = x + ((x / 5) * 3)
             mdp.set_pixel(buf_x, MDP_HEIGHT - y, 1)
     mdp.show()
-    print matrix
+#     print matrix
 
 
 mdp.set_brightness(1.0)
