@@ -1,5 +1,5 @@
-# spectrumAnalyser
-Spectrum Analyser for Raspberry Pi with Micro Dot pHAT
+# Spectrum Analyser
+Spectrum analyser for Raspberry Pi with a Micro Dot pHAT. Analyses and plays WAV files.
 
 To use, call `python spectrumAnalyser path/to/wav/file.wav`
 
