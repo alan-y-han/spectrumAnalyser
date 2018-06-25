@@ -11,26 +11,19 @@ def power_index(val, chunkSize, sampleRate):
 
 def compute_fft(data, bins, weighting):
     fourier = np.fft.rfft(data)
-    fourier = np.delete(fourier, len(fourier) - 1)
+    fourier = np.delete(fourier, len(fourier) - 1) # delete last element (always zero for some reason)
 
     power = np.abs(fourier)
 
-    matrix = [0] * (len(bins) - 1)
-
-    for i in xrange(len(matrix)):
-        matrix[i] = int(np.mean(power[bins[i] : bins[i + 1]]))
-
-    matrix = np.divide(np.multiply(matrix, weighting), 1000000)
-    # matrix = matrix.clip(0, 7)
+    matrix = [np.mean(power[bins[i] : bins[i + 1]]) * weighting[i] for i in xrange(len(bins) - 1)]
 
     return matrix
 
 
-MDP_HEIGHT = 6
-
 def drawMatrix(matrix):
 
     gamma = 1.5
+    MDP_HEIGHT = 6
 
     mdp.clear()
 
@@ -41,22 +34,9 @@ def drawMatrix(matrix):
             if matrix[x] > pow(gamma, y):
                 mdp.set_pixel(buf_x, MDP_HEIGHT - y, 1)
             else:
-                break
-
-
-        # for y in range(int(matrix[x])):
-            
+                break            
 
     mdp.show()
-
-
-def sigIntHandler(signalNo, frame):
-    # clean up
-    inStream.stop_stream()
-    inStream.close()
-    p.terminate()
-
-    sys.exit(0)
 
 
 if __name__ == '__main__':
@@ -73,7 +53,6 @@ if __name__ == '__main__':
         rate=sampleRate,
         # input_device_index=,
         input=True)
-
 
     # bins
     noBins = 30
@@ -96,9 +75,19 @@ if __name__ == '__main__':
     maxWeight = 32
     scaleF = float(maxWeight - 1) / pow(gamma, noBins - 1)
     weighting = (np.array([scaleF * pow(gamma, x) + 1 for x in xrange(noBins)]))
+    weighting = np.divide(weighting, 1000000)
+
     print weighting
 
     mdp.set_brightness(1.0)
+
+    def sigIntHandler(signalNo, frame):
+        # clean up
+        inStream.stop_stream()
+        inStream.close()
+        p.terminate()
+
+        sys.exit(0)
     signal.signal(signal.SIGINT, sigIntHandler)
 
     while True:
