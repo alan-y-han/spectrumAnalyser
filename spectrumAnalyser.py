@@ -5,11 +5,14 @@ from struct import unpack
 import numpy as np
 import microdotphat as mdp
 
+import cProfile
+pr = cProfile.Profile()
+
 wavfile = wave.open(sys.argv[1], 'r')
 
 sample_rate = wavfile.getframerate()
 no_channels = wavfile.getnchannels()
-chunk = 2048
+chunk = 1024
 
 output = aa.PCM(aa.PCM_PLAYBACK, aa.PCM_NORMAL)
 output.setchannels(no_channels)
@@ -84,8 +87,18 @@ def drawMatrix(matrix):
 mdp.set_brightness(1.0)
 data = wavfile.readframes(chunk)
 
+
+count = 0
+pr.enable()
+
 while data != '':
+
     output.write(data)
     matrix = compute_fft(data, chunk, sample_rate)
     drawMatrix(matrix)
     data = wavfile.readframes(chunk)
+
+    count += 1
+    if count == 100:
+        pr.disable()
+        pr.print_stats(sort='time')
