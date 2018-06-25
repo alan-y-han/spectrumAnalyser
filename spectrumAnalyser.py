@@ -75,7 +75,7 @@ if __name__ == '__main__':
     maxWeight = 32
     scaleF = float(maxWeight - 1) / pow(gamma, noBins - 1)
     weighting = (np.array([scaleF * pow(gamma, x) + 1 for x in xrange(noBins)]))
-    weighting = np.divide(weighting, 1000000)
+    weighting = np.divide(weighting, 50000)
 
     print weighting
 
