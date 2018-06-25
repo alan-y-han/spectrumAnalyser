@@ -1,41 +1,41 @@
 import sys
-import wave
-import alsaaudio as aa
+import pyaudio
 from struct import unpack
 import numpy as np
 import microdotphat as mdp
 
-import cProfile
-pr = cProfile.Profile()
 
-wavfile = wave.open(sys.argv[1], 'r')
+sample_rate = 44100
+no_channels = 1
+chunk = 512
 
-sample_rate = wavfile.getframerate()
-no_channels = wavfile.getnchannels()
-chunk = 1024
 
-output = aa.PCM(aa.PCM_PLAYBACK, aa.PCM_NORMAL)
-output.setchannels(no_channels)
-output.setrate(sample_rate)
-output.setformat(aa.PCM_FORMAT_S16_LE)
-output.setperiodsize(chunk)
+p = pyaudio.PyAudio()
+
+inStream = p.open(
+    format=pyaudio.paInt16,
+    channels=no_channels,
+    rate=sample_rate,
+    # input_device_index=,
+    input=True)
 
 
 # bins
 noBins = 30
 maxFreq = 8000
-gamma = 1.19
+gamma = 1.17
 
 scaleF = float(maxFreq) / pow(gamma, noBins - 1)
 bins = [0]
 for x in xrange(noBins):
     bins.append(int(scaleF * pow(gamma, x)))
+
 print bins
 
 
 # weighting
 
-maxWeight = 32
+maxWeight = 48
 scaleF = float(maxWeight - 1) / pow(gamma, noBins - 1)
 weighting = (np.array([scaleF * pow(gamma, x) + 1 for x in xrange(noBins)]))
 print weighting
@@ -51,8 +51,8 @@ def power_index(val):
 
 def compute_fft(data, chunk, sample_rate):
     global matrix
-    data = unpack("%dh" % (len(data) / 2), data)
-    data = np.array(data, dtype='h')
+    # data = unpack("%dh" % (len(data) / 2), data)
+    # data = np.array(data, dtype='h')
 
     fourier = np.fft.rfft(data)
     fourier = np.delete(fourier, len(fourier) - 1)
@@ -85,20 +85,15 @@ def drawMatrix(matrix):
 
 
 mdp.set_brightness(1.0)
-data = wavfile.readframes(chunk)
 
 
-count = 0
-pr.enable()
+while True:
 
-while data != '':
+    rawsamps = inStream.read(chunk, False)
+    # Convert raw data to NumPy array
+    samps = np.fromstring(rawsamps, dtype=np.int16)
 
-    output.write(data)
-    matrix = compute_fft(data, chunk, sample_rate)
+    # output.write(data)
+    matrix = compute_fft(samps, chunk, sample_rate)
     drawMatrix(matrix)
-    data = wavfile.readframes(chunk)
-
-    count += 1
-    if count == 100:
-        pr.disable()
-        pr.print_stats(sort='time')
+    # data = wavfile.readframes(chunk)
