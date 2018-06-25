@@ -23,14 +23,15 @@ inStream = p.open(
 # bins
 noBins = 30
 maxFreq = 8000
-gamma = 1.17
+gamma = 1.2
 
 scaleF = float(maxFreq) / pow(gamma, noBins - 1)
-bins = [0]
+freqBins = [0]
 for x in xrange(noBins):
-    bins.append(int(scaleF * pow(gamma, x)))
+    freqBins.append(int(scaleF * pow(gamma, x)))
 
-print bins
+
+
 
 
 # weighting
@@ -49,6 +50,14 @@ def power_index(val):
     return int(2 * chunk * val / sample_rate)
 
 
+bins = [power_index(freq) for freq in freqBins]
+for i in xrange(1, len(bins)):
+    if bins[i] <= bins[i - 1]:
+        bins[i] = bins[i - 1] + 1
+
+print bins
+
+
 def compute_fft(data, chunk, sample_rate):
     global matrix
     # data = unpack("%dh" % (len(data) / 2), data)
@@ -60,10 +69,10 @@ def compute_fft(data, chunk, sample_rate):
     power = np.abs(fourier)
 
     for i in xrange(noBins):
-        minI = power_index(bins[i])
-        maxI = power_index(bins[i + 1])
+        minI = bins[i]
+        maxI = bins[i + 1]
         if minI != maxI:
-            matrix[i] = int(np.mean(power[power_index(bins[i]) : power_index(bins[i + 1])]))
+            matrix[i] = int(np.mean(power[bins[i] : bins[i + 1]]))
         else:
             matrix[i] = 0
 
